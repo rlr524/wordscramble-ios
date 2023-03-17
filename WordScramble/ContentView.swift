@@ -14,6 +14,7 @@ struct ContentView: View {
     @State private var errorTitle = ""
     @State private var errorMessage = ""
     @State private var showingError = false
+    @State private var score = 0
     
     var body: some View {
         NavigationView {
@@ -39,6 +40,21 @@ struct ContentView: View {
             } message: {
                 Text(errorMessage)
             }
+            .toolbar {
+                ToolbarItemGroup(placement: .bottomBar) {
+                    Button {
+                        usedWords = []
+                        startGame()
+                        newWord = ""
+                    } label: {
+                        Text("New Word")
+                    }
+                    
+                    Spacer()
+                    
+                    Text("Score: \(score)")
+                }
+            }
         }
     }
     
@@ -49,6 +65,16 @@ struct ContentView: View {
         
         // exit if the remaining string is empty
         guard answer.count > 0 else { return }
+        
+        guard isRootWord(word: answer) else {
+            wordError(title: "Word not valid", message: "You can't just use the starting word!")
+            return
+        }
+        
+        guard isTooShort(word: answer) else {
+            wordError(title: "Word not valid", message: "You must use a word of 3 or more letters")
+            return
+        }
         
         guard isOriginal(word: answer) else {
             wordError(title: "Word used already", message: "Be more original")
@@ -70,10 +96,14 @@ struct ContentView: View {
             usedWords.insert(answer, at: 0)
         }
         
+        score += answer.count
+        
         newWord = ""
     }
     
     func startGame() {
+        usedWords = []
+        score = 0
         // Find the URL for the start.txt in the app bundle
         if let startWordsURL = Bundle.main.url(forResource: "start", withExtension: "txt") {
             // Load start.txt into a string
@@ -88,6 +118,14 @@ struct ContentView: View {
         }
         // If there was an error, trigger a crash
         fatalError("Could not load start.txt from bundle.")
+    }
+    
+    func isRootWord(word: String) -> Bool {
+        word != rootWord
+    }
+    
+    func isTooShort(word: String) -> Bool {
+        word.count >= 3
     }
     
     func isOriginal(word: String) -> Bool {
